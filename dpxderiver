@@ -1,5 +1,5 @@
 #!/bin/bash
-# dpxderiver.sh
+# dpxderiver
 # author: dave rice dave@dericed.com
 # description: This is a very specific script intended to take a collection of DPX images and a WAV audio file as an input and then create multiple derivatives using ffmbc and libx264
 # dependencies: The script expects to use ffmpeg version 1.1 or higher compiled with libx264 and libfaac. Configure libx264 with either --bit-depth=8 or --bit-depth=10 as you wish.
