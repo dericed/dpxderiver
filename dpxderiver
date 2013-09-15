@@ -12,15 +12,29 @@ usage(){
     echo
     echo "$(basename $0) ${version}"
     echo "Transcode DPX file sets to pre-determined outputs."
-    echo "Usage: $(basename $0) package"
-    echo " -h display this help"
+    echo "Usage: $(basename $0) [ -o /output/directory/ ] package"
+    echo " -o <directory>   - Set directory for the output files."
+    echo " -h               - Display this help"
     exit
 }
 
+output_options_lossless_dir=""
+output_options_dnxhd_dir=""
+
 # command-line options to set mediaid and original variables
 OPTIND=1
-while getopts ":h" opt; do
+while getopts ":o:h" opt; do
 case "$opt" in
+        o)  if [ ! -d "$OPTARG" ] ; then
+                echo "Error: $OPTARG is not a directory"
+                exit 1
+            elif  [ ! -w "$OPTARG" ] ; then
+                echo "Error: $OPTARG is not writable"
+                exit 1
+            else
+                output_options_lossless_dir="$OPTARG"
+                output_options_dnxhd_dir="$OPTARG"
+            fi ;;
         h) usage ;;
         *) echo "bad option -$OPTARG" ; usage ;;
         :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
@@ -38,8 +52,6 @@ audiopath="$dpx_package_path/audio"
 
 # presumed variables
 logspath="$dpx_package_path/logs"
-output_options_dnxhd_dir="$dpx_package_path/dnxhd"
-output_options_dnxhd_name="dnxhd.mov"
 start_number="100000"
 firstimagefile=$(find "$imagepath" -type f -iname "*${start_number}.dpx" | head -n 1)
 patternfilename=$(echo "$firstimagefile" | sed "s/${start_number}/%06d/")
@@ -77,9 +89,11 @@ echo Selected frame rate is "$input_frame_rate"
 input_options="-start_number $start_number -r $input_frame_rate"
 
 # dnxhd output options
-output_options_dnxhd_dir="$dpx_package_path/dnxhd"
+if [ ! "$output_options_dnxhd_dir" ] ; then
+    echo hi
+    output_options_dnxhd_dir="$dpx_package_path/dnxhd"
+fi
 output_options_dnxhd_name="dnxhd.mov"
-
 output_options_dnxhd_v+=(-c:v dnxhd)
 output_options_dnxhd_v+=(-pix_fmt yuv422p10le)
 output_options_dnxhd_v+=(-s 1920x1080)
@@ -87,7 +101,9 @@ output_options_dnxhd_v+=(-b:v 175M)
 output_options_dnxhd_v+=(-r ntsc-film)
 
 # lossless output options
-output_options_lossless_dir="$dpx_package_path/lossless"
+if [ ! "$output_options_lossless_dir" ] ; then
+    output_options_lossless_dir="$dpx_package_path/lossless"
+fi
 output_options_lossless_name="lossless.mov"
 output_options_lossless_v=(-c:v libx264)
 output_options_lossless_v+=(-pix_fmt yuv422p10le)
