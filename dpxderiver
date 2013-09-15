@@ -119,6 +119,6 @@ output_options_lossless_v+=(-qp 0) # force constant QT, 0=lossless
  
 export FFREPORT="file=$logspath/%p_%t_convert-to-dnxhd_and_lossless_yuv422p10le_libx264.log"
 
-ffmpeg $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_dnxhd_v[@]} ${output_options_dnxhd_a[@]} "$output_options_dnxhd_dir/$output_options_dnxhd_name" ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
-
+ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_dnxhd_v[@]} ${output_options_dnxhd_a[@]} "$output_options_dnxhd_dir/$output_options_dnxhd_name" ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
+echo
 echo DONE
