@@ -14,6 +14,7 @@ usage(){
     echo "Transcode DPX file sets to pre-determined outputs."
     echo "Usage: $(basename $0) [ -o /output/directory/ ] package"
     echo " -o <directory>   - Set directory for the output files."
+    echo " -x               - Skip making a DNxHD output."
     echo " -h               - Display this help"
     exit
 }
@@ -23,7 +24,7 @@ output_options_dnxhd_dir=""
 
 # command-line options to set mediaid and original variables
 OPTIND=1
-while getopts ":o:h" opt; do
+while getopts ":o:xh" opt; do
 case "$opt" in
         o)  if [ ! -d "$OPTARG" ] ; then
                 echo "Error: $OPTARG is not a directory"
@@ -35,6 +36,7 @@ case "$opt" in
                 output_options_lossless_dir="$OPTARG"
                 output_options_dnxhd_dir="$OPTARG"
             fi ;;
+        x) NODNXHD="Y" ;;
         h) usage ;;
         *) echo "bad option -$OPTARG" ; usage ;;
         :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
@@ -119,14 +121,19 @@ output_options_lossless_v+=(-qp 0) # force constant QT, 0=lossless
  
 # check for required directories (possibly create missing output directories)
 [ -d "$logspath" ] || { mkdir -p "$logspath" || { echo "Error: Can not create $logspath" ; exit 1 ; }; };
-[ -d "$output_options_dnxhd_dir" ] || { mkdir -p "$output_options_dnxhd_dir" || { echo "Error: Can not create $output_options_dnxhd_dir" ; exit 1 ; }; };
+if [ ! "$NODNXHD" = "Y" ] ; then
+    [ -d "$output_options_dnxhd_dir" ] || { mkdir -p "$output_options_dnxhd_dir" || { echo "Error: Can not create $output_options_dnxhd_dir" ; exit 1 ; }; };
+fi
 [ -d "$output_options_lossless_dir" ] || { mkdir -p "$output_options_lossless_dir" || { echo "Error: Can not create $output_options_lossless_dir" ; exit 1 ; }; };
  
 # check for minimal required files
 [ -r "$firstimagefile" ] || { echo "Error: $firstimagefile is not found or not readable" ; exit 1 ; };
  
 export FFREPORT="file=$logspath/%p_%t_convert-to-dnxhd_and_lossless_yuv422p10le_libx264.log"
-
-ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_dnxhd_v[@]} ${output_options_dnxhd_a[@]} "$output_options_dnxhd_dir/$output_options_dnxhd_name" ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
+if [ ! "$NODNXHD" = "Y" ] ; then
+    ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_dnxhd_v[@]} ${output_options_dnxhd_a[@]} "$output_options_dnxhd_dir/$output_options_dnxhd_name" ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
+else
+    ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
+fi
 echo
 echo DONE
