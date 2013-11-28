@@ -10,11 +10,12 @@
 
 usage(){
     echo
-    echo "$(basename $0) ${version}"
+    echo "$(basename $0) 2.11-SNAPSHOT"
     echo "Transcode DPX file sets to pre-determined outputs."
     echo "Usage: $(basename $0) [ -o /output/directory/ ] package"
     echo " -o <directory>   - Set directory for the output files."
-    echo " -x               - Skip making a DNxHD output."
+    echo " -d make DNxHD output."
+  #  echo " -x               - Skip making a DNxHD output."
     echo " -h               - Display this help"
     exit
 }
@@ -24,7 +25,9 @@ output_options_dnxhd_dir=""
 
 # command-line options to set mediaid and original variables
 OPTIND=1
-while getopts ":o:xh" opt; do
+
+NODNXHD="Y" 
+while getopts ":o:xdh" opt; do
 case "$opt" in
         o)  if [ ! -d "$OPTARG" ] ; then
                 echo "Error: $OPTARG is not a directory"
@@ -36,7 +39,8 @@ case "$opt" in
                 output_options_lossless_dir="$OPTARG"
                 output_options_dnxhd_dir="$OPTARG"
             fi ;;
-        x) NODNXHD="Y" ;;
+        
+        d) NODNXHD="N" ;;
         h) usage ;;
         *) echo "bad option -$OPTARG" ; usage ;;
         :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
@@ -46,6 +50,8 @@ shift $(( ${OPTIND} - 1 ))
 
 [ "$#" != 1 ] && usage
 dpx_package_path="$1"
+
+baselosslessoutputfilename=`basename $1`
 imagepath="$dpx_package_path/images"
 audiopath="$dpx_package_path/audio"
 [ -d "$dpx_package_path" ] || { echo "Error: $dpx_package_path is not found or is not a directory" ; usage ; };
@@ -114,7 +120,8 @@ output_options_dnxhd_v+=(-r ntsc-film)
 if [ ! "$output_options_lossless_dir" ] ; then
     output_options_lossless_dir="$dpx_package_path/lossless"
 fi
-output_options_lossless_name="lossless.mov"
+#output_options_lossless_name="lossless.mov"
+output_options_lossless_name="${baselosslessoutputfilename}.mov"
 output_options_lossless_v=(-c:v libx264)
 output_options_lossless_v+=(-pix_fmt yuv422p10le)
 output_options_lossless_v+=(-qp 0) # force constant QT, 0=lossless
@@ -129,7 +136,8 @@ fi
 # check for minimal required files
 [ -r "$firstimagefile" ] || { echo "Error: $firstimagefile is not found or not readable" ; exit 1 ; };
  
-export FFREPORT="file=$logspath/%p_%t_convert-to-dnxhd_and_lossless_yuv422p10le_libx264.log"
+export FFREPORT="file=$logspath/%p_%t_convert-to-lossless_yuv422p10le_libx264.log"
+
 if [ ! "$NODNXHD" = "Y" ] ; then
     ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_dnxhd_v[@]} ${output_options_dnxhd_a[@]} "$output_options_dnxhd_dir/$output_options_dnxhd_name" ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
 else
