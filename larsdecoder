@@ -1,0 +1,99 @@
+#!/bin/bash
+# lars decoder
+# author: dave rice dave@dericed.com
+version="1.0"
+F50=""
+
+usage(){
+    echo
+echo "$(basename ${0}) ${version}"
+    echo "Transcode the input(s) to XDCamHD50 PAL 25p (MXF OP1a) 1920x1080 (or PAL 50i with the -i option). By default the output will be written to the same directory as the input. You can override this with the -o option."
+    echo "Dependencies: a recent ffmpeg"
+    echo "Usage: $(basename $0) [ -o /directory/to/write/to/ ] [ -i ] file1 [ file2 ...]"
+    echo " -o directory ( directory to write the resulting file to )"
+    echo " -n (dry-run mode, show the commands that would be run but don't do anything)"
+    echo " -i use 50i instead of 25p"
+    echo " -h ( display this help )"
+    echo
+exit
+}
+[ "${#}" = 0 ] && usage
+
+# command-line options to set mediaid and original variables
+OPTIND=1
+while getopts ":o:nih" opt ; do
+case "${opt}" in
+        o) outputdir_forced="$OPTARG" && _check_outputdir_forced ;;
+        n) DRYRUN=true;;
+        i) F50="Y";;
+        h) usage ;;
+        *) echo "bad option -$OPTARG" ; usage ;;
+        :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
+    esac
+done
+shift $(( ${OPTIND} - 1 ))
+
+while [ "${*}" != "" ] ; do
+    input="$1"
+    echo "$input"
+    name=$(basename "${input%.*}")
+    subdirectory="xdcam_mxf"
+    if [ -z "${outputdir_forced}" ] ; then
+        outputdir=$(dirname "${input}")"/${subdirectory}"
+        logdir="$(dirname "${input}")/${subdirectory}/logs"
+    else
+        outputdir="${outputdir_forced}"
+        logdir="${outputdir_forced}/logs"
+    fi
+
+    # set up output
+    output="${outputdir}/${name}.mxf"
+    if [ -s "${output}" ] ; then
+        echo "WARNING ${output} already exists, skipping transcode"
+        shift
+        continue
+    fi
+    mkdir -p "${outputdir}"
+
+    # clear local arrays
+    unset inputoptions
+    unset middleoptions
+
+    # encoding options
+    inputoptions+=(-vsync 0)
+    middleoptions+=(-map 0:v)
+    middleoptions+=(-map 0:a)
+
+    middleoptions+=(-vf "scale='if(gt(iw,ih),1920,-1)':'if(gt(iw,ih),-1,1080)':interl=1,format=yuv422p,pad=ih*16/9:ih:(ow-iw)/2:(oh-ih)/2,setsar=1/1,setdar=16/9,fps=fps=pal")
+    middleoptions+=(-c:v mpeg2video)
+    middleoptions+=(-pix_fmt yuv422p)
+    middleoptions+=(-intra_vlc 1)
+    middleoptions+=(-non_linear_quant 1)
+    middleoptions+=(-q:v 1)
+    middleoptions+=(-qmin 1)
+    middleoptions+=(-qmax 8)
+    middleoptions+=(-g 15)
+    middleoptions+=(-b:v 50M)
+    middleoptions+=(-maxrate:v 50M)
+    middleoptions+=(-minrate:v 50M)
+    middleoptions+=(-bufsize 17825792)
+    middleoptions+=(-rc_init_occupancy 17825792)
+    middleoptions+=(-dc 10)
+    middleoptions+=(-lmin QP2LAMBDA)
+    middleoptions+=(-flags +ildct+ilme+low_delay)
+    middleoptions+=(-ps 1)
+    
+    middleoptions+=(-c:a pcm_s16le)
+    middleoptions+=(-ar 48k)
+    middleoptions+=(-ac 2)
+
+    if [ "${logdir}" != "" ] ; then
+        mkdir -p "${logdir}"
+        export FFREPORT="file=${logdir}/%p_%t_$(basename "$0")_${version}.txt"
+        inputoptions+=(-v warning -stats)
+    else
+        export FFREPORT=""
+    fi
+    ffmpeg ${inputoptions[@]} -i "${input}" ${middleoptions[@]} "${output}"
+    shift
+done
