@@ -64,7 +64,7 @@ start_number="100000"
 firstimagefile=$(find "$imagepath" -type f -iname "*${start_number}.dpx" | head -n 1)
 if  [ ! $firstimagefile ] ; then
     firstimagefile=$(find "$imagepath" -type f -iname "*dpx"| sort | head -n 1)
-    start_number=$(basename $firstimagefile | grep -o '[0-9]\{6\}')
+    start_number=$(basename "$firstimagefile" | grep -o '[0-9]\{6\}')
 fi
 if  [ ! $firstimagefile ] ; then
     echo The image file name and pattern can not be deduced.
