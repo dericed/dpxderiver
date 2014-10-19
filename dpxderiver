@@ -84,7 +84,9 @@ case "${opt}" in
 done
 shift $(( ${OPTIND} - 1 ))
 
-[ "${#}" != 1 ] && usage
+if [ "${#}" != 1 ] ; then
+    usage
+fi
 dpx_package_path="${1}"
 
 baselosslessoutputfilename=$(basename "${1}")
@@ -175,7 +177,7 @@ if [ "${overwrite_outputs}" ] ; then
     input_options+=(-"${overwrite_outputs}")
 fi
 
-# check for required directories (possibly create missing output directories)
+# set up logging directory and environment variables
 _mkdir "${logspath}"
 export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
 
