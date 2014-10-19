@@ -112,7 +112,7 @@ if [ -z "${start_number}" ] ; then
     exit 1
 fi
 audiofile=$(find "${audiopath}" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
-overwrite_outputs=" -y " # must equal " -y " to overwrite outputs, " -n " to skip any operation that would overwrite, or " " to prompt to user to decide
+overwrite_outputs="y" # must equal "y" to overwrite outputs, "n" to skip any operation that would overwrite, or "" to prompt to user to decide
 
 unset output_options
 unset input_options
@@ -166,9 +166,14 @@ echo "What frame rate should be used to interpret the input? "
 fi
 echo "Selected frame rate is ${input_frame_rate}"
 
-# variable for dpx input
+# set input_options for transcoding
+input_options+=(-v warning)
+input_options+=(-stats)
 input_options+=(-start_number ${start_number})
 input_options+=(-r ${input_frame_rate})
+if [ "${overwrite_outputs}" ] ; then
+    input_options+=(-"${overwrite_outputs}")
+fi
 
 # check for required directories (possibly create missing output directories)
 _mkdir "${logspath}"
@@ -177,6 +182,6 @@ export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
 # check for minimal required files
 _checkreadable "${firstimagefile}"
 
-ffmpeg -v warning -stats ${overwrite_outputs} ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
+ffmpeg ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
 echo
 echo DONE
