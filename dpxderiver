@@ -12,7 +12,7 @@ usage(){
     echo
     echo "$(basename $0) 2.11-SNAPSHOT"
     echo "Transcode DPX file sets to pre-determined outputs."
-    echo "Usage: $(basename $0) [ -o /output/directory/ ] package"
+    echo "Usage: $(basename $0) [ -d /output/directory/ ] package"
     echo " -d <directory>   - Set directory for the output files."
     echo " -h               - Display this help"
     exit
