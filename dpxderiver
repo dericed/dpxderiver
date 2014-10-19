@@ -134,7 +134,13 @@ echo Selected frame rate is "$input_frame_rate"
 input_options="-start_number $start_number -r $input_frame_rate"
 
 # check for required directories (possibly create missing output directories)
-[ -d "$logspath" ] || { mkdir -p "$logspath" || { echo "Error: Can not create $logspath" ; exit 1 ; }; };
+if [ ! -d "$logspath" ] ; then
+    mkdir -p "$logspath"
+    if [[ "${?}" != 0 ]] ; then
+        echo "Error: Can not create $logspath"
+        exit 1
+    fi
+fi
 if [ ! "$NODNXHD" = "Y" ] ; then
     [ -d "$output_options_dnxhd_dir" ] || { mkdir -p "$output_options_dnxhd_dir" || { echo "Error: Can not create $output_options_dnxhd_dir" ; exit 1 ; }; };
 fi
