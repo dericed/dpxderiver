@@ -14,8 +14,6 @@ usage(){
     echo "Transcode DPX file sets to pre-determined outputs."
     echo "Usage: $(basename $0) [ -o /output/directory/ ] package"
     echo " -o <directory>   - Set directory for the output files."
-    echo " -d make DNxHD output."
-  #  echo " -x               - Skip making a DNxHD output."
     echo " -h               - Display this help"
     exit
 }
@@ -26,8 +24,7 @@ output_options_dnxhd_dir=""
 # command-line options to set mediaid and original variables
 OPTIND=1
 
-NODNXHD="Y" 
-while getopts ":o:xdh" opt; do
+while getopts ":o:h" opt; do
 case "$opt" in
         o)  if [ ! -d "$OPTARG" ] ; then
                 echo "Error: $OPTARG is not a directory"
@@ -40,7 +37,6 @@ case "$opt" in
                 output_options_dnxhd_dir="$OPTARG"
             fi ;;
         
-        d) NODNXHD="N" ;;
         h) usage ;;
         *) echo "bad option -$OPTARG" ; usage ;;
         :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
