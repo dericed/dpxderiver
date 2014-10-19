@@ -88,7 +88,10 @@ if  [ ! $firstimagefile ] ; then
     exit 1
 fi
 patternfilename=$(echo "$firstimagefile" | sed "s/${start_number}/%06d/")
-[ -z "$start_number" ] && { echo ERROR Unable to discover number pattern of the filenames ; exit 1 ;};
+if [ -z "$start_number" ] ; then
+    echo ERROR Unable to discover number pattern of the filenames
+    exit 1
+fi
 audiofile=$(find "$audiopath" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
 overwrite_outputs=" -y " # must equal " -y " to overwrite outputs, " -n " to skip any operation that would overwrite, or " " to prompt to user to decide
 
@@ -141,7 +144,6 @@ echo "What frame rate should be used to interpret the input? "
         break
     done
 fi
-
 echo Selected frame rate is "$input_frame_rate"
 
 # variable for dpx input
@@ -149,11 +151,13 @@ input_options="-start_number $start_number -r $input_frame_rate"
 
 # check for required directories (possibly create missing output directories)
 _mkdir "$logspath"
+export FFREPORT="file=$logspath/%p_%t_$(basename "${0}")_${version}.log"
 
 # check for minimal required files
-[ -r "$firstimagefile" ] || { echo "Error: $firstimagefile is not found or not readable" ; exit 1 ; };
- 
-export FFREPORT="file=$logspath/%p_%t_$(basename "${0}")_${version}.log"
+if [ ! -r "${firstimagefile}" ] ; then
+    echo "Error: ${firstimagefile} is not found or not readable"
+    exit 1
+fi
 
 ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${outputarguments[@]}
 echo
