@@ -89,105 +89,105 @@ if [ "${#}" = 0 ] ; then
 fi
 
 while [ "${*}" != "" ] ; do
-dpx_package_path="${1}"
+    dpx_package_path="${1}"
 
-baselosslessoutputfilename=$(basename "${1}")
-imagepath="${dpx_package_path}/images"
-audiopath="${dpx_package_path}/audio"
-_checkdir "${dpx_package_path}"
-_checkdir "${imagepath}"
-_checkdir "${audiopath}"
+    baselosslessoutputfilename=$(basename "${1}")
+    imagepath="${dpx_package_path}/images"
+    audiopath="${dpx_package_path}/audio"
+    _checkdir "${dpx_package_path}"
+    _checkdir "${imagepath}"
+    _checkdir "${audiopath}"
 
-# presumed variables
-logspath="${dpx_package_path}/logs"
-start_number="100000"
-firstimagefile=$(find "${imagepath}" -type f -iname "*${start_number}.dpx" | head -n 1)
-if  [ ! "${firstimagefile}" ] ; then
-    firstimagefile=$(find "${imagepath}" -type f -iname "*dpx"| sort | head -n 1)
-    start_number=$(basename "${firstimagefile}" | grep -o '[0-9]\{6\}')
-fi
-if  [ ! "${firstimagefile}" ] ; then
-    echo The image file name and pattern can not be deduced.
-    exit 1
-fi
-patternfilename=$(echo "${firstimagefile}" | sed "s/${start_number}/%06d/")
-if [ -z "${start_number}" ] ; then
-    echo ERROR Unable to discover number pattern of the filenames
-    exit 1
-fi
-audiofile=$(find "${audiopath}" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
-overwrite_outputs="y" # must equal "y" to overwrite outputs, "n" to skip any operation that would overwrite, or "" to prompt to user to decide
-
-unset output_options
-unset input_options
-
-#dnxhd output options
-if [[ $(echo "${outputs}" | grep -w "dnxhd") ]] ; then
-    output_options+=(-c:v dnxhd)
-    output_options+=(-pix_fmt yuv422p10le)
-    output_options+=(-s 1920x1080)
-    output_options+=(-b:v 175M)
-    output_options+=(-r ntsc-film)
-    if [ -f "$audiofile" ] ; then
-        output_options+=(-c:a copy)
+    # presumed variables
+    logspath="${dpx_package_path}/logs"
+    start_number="100000"
+    firstimagefile=$(find "${imagepath}" -type f -iname "*${start_number}.dpx" | head -n 1)
+    if  [ ! "${firstimagefile}" ] ; then
+        firstimagefile=$(find "${imagepath}" -type f -iname "*dpx"| sort | head -n 1)
+        start_number=$(basename "${firstimagefile}" | grep -o '[0-9]\{6\}')
     fi
-    if [ ! "${output_options_dnxhd_dir}" ] ; then
-        output_options_dnxhd_dir="${dpx_package_path}/dnxhd"
+    if  [ ! "${firstimagefile}" ] ; then
+        echo The image file name and pattern can not be deduced.
+        exit 1
     fi
-    output_options_dnxhd_name="dnxhd.mov"
-    output_options+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
-    _mkdir "$output_options_dnxhd_dir"
-fi
+    patternfilename=$(echo "${firstimagefile}" | sed "s/${start_number}/%06d/")
+    if [ -z "${start_number}" ] ; then
+        echo ERROR Unable to discover number pattern of the filenames
+        exit 1
+    fi
+    audiofile=$(find "${audiopath}" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
+    overwrite_outputs="y" # must equal "y" to overwrite outputs, "n" to skip any operation that would overwrite, or "" to prompt to user to decide
 
-# lossless output options
-if [[ $(echo "${outputs}" | grep -w "losslessh264") ]] ; then
-    output_options+=(-c:v libx264)
-    output_options+=(-pix_fmt yuv422p10le)
-    output_options+=(-qp 0) # force constant QT, 0=lossless
+    unset output_options
+    unset input_options
+
+    #dnxhd output options
+    if [[ $(echo "${outputs}" | grep -w "dnxhd") ]] ; then
+        output_options+=(-c:v dnxhd)
+        output_options+=(-pix_fmt yuv422p10le)
+        output_options+=(-s 1920x1080)
+        output_options+=(-b:v 175M)
+        output_options+=(-r ntsc-film)
+        if [ -f "$audiofile" ] ; then
+            output_options+=(-c:a copy)
+        fi
+        if [ ! "${output_options_dnxhd_dir}" ] ; then
+            output_options_dnxhd_dir="${dpx_package_path}/dnxhd"
+        fi
+        output_options_dnxhd_name="dnxhd.mov"
+        output_options+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
+        _mkdir "$output_options_dnxhd_dir"
+    fi
+
+    # lossless output options
+    if [[ $(echo "${outputs}" | grep -w "losslessh264") ]] ; then
+        output_options+=(-c:v libx264)
+        output_options+=(-pix_fmt yuv422p10le)
+        output_options+=(-qp 0) # force constant QT, 0=lossless
+        if [ -f "${audiofile}" ] ; then
+            output_options+=(-c:a copy)
+        fi
+        if [ ! "${output_options_lossless_dir}" ] ; then
+            output_options_lossless_dir="${dpx_package_path}/lossless"
+        fi
+        output_options_lossless_name="${baselosslessoutputfilename}.mov"
+        output_options+=("${output_options_lossless_dir}/${output_options_lossless_name}")
+        _mkdir "${output_options_lossless_dir}"
+    fi
+
+    unset audioinput
     if [ -f "${audiofile}" ] ; then
-        output_options+=(-c:a copy)
+        audioinput=(-i "${audiofile}")
     fi
-    if [ ! "${output_options_lossless_dir}" ] ; then
-        output_options_lossless_dir="${dpx_package_path}/lossless"
+
+    if [ "${input_frame_rate}" = "" ] ; then
+    echo "What frame rate should be used to interpret the input? "
+        PS3="Selection? "
+        select input_frame_rate in "12" "16" "18" "20" "22" "24000/1001" "24" "25" "30"
+        do
+            break
+        done
     fi
-    output_options_lossless_name="${baselosslessoutputfilename}.mov"
-    output_options+=("${output_options_lossless_dir}/${output_options_lossless_name}")
-    _mkdir "${output_options_lossless_dir}"
-fi
+    echo "Selected frame rate is ${input_frame_rate}"
 
-unset audioinput
-if [ -f "${audiofile}" ] ; then
-    audioinput=(-i "${audiofile}")
-fi
+    # set input_options for transcoding
+    input_options+=(-v warning)
+    input_options+=(-stats)
+    input_options+=(-start_number ${start_number})
+    input_options+=(-r ${input_frame_rate})
+    if [ "${overwrite_outputs}" ] ; then
+        input_options+=(-"${overwrite_outputs}")
+    fi
 
-if [ "${input_frame_rate}" = "" ] ; then
-echo "What frame rate should be used to interpret the input? "
-    PS3="Selection? "
-    select input_frame_rate in "12" "16" "18" "20" "22" "24000/1001" "24" "25" "30"
-    do
-        break
-    done
-fi
-echo "Selected frame rate is ${input_frame_rate}"
+    # set up logging directory and environment variables
+    _mkdir "${logspath}"
+    export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
 
-# set input_options for transcoding
-input_options+=(-v warning)
-input_options+=(-stats)
-input_options+=(-start_number ${start_number})
-input_options+=(-r ${input_frame_rate})
-if [ "${overwrite_outputs}" ] ; then
-    input_options+=(-"${overwrite_outputs}")
-fi
+    # check for minimal required files
+    _checkreadable "${firstimagefile}"
 
-# set up logging directory and environment variables
-_mkdir "${logspath}"
-export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
-
-# check for minimal required files
-_checkreadable "${firstimagefile}"
-
-ffmpeg ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
-shift
+    ffmpeg ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
+    shift
 done
 echo
 echo DONE
