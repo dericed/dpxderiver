@@ -33,6 +33,18 @@ output_options_dnxhd_dir=""
 # command-line options to set mediaid and original variables
 OPTIND=1
 
+_mkdir(){
+    # _mkdir is a local function that makes directories if needed and exits if they can't be made
+    dir2make="${1}"
+    if [ ! -d "${dir2make}" ] ; then
+        mkdir -p "${dir2make}"
+        if [[ "${?}" != 0 ]] ; then
+            echo "Error: Can not create ${dir2make}"
+            exit 1
+        fi
+    fi
+}
+
 while getopts ":d:o:h" opt; do
 case "$opt" in
         d)  if [ ! -d "$OPTARG" ] ; then
@@ -97,6 +109,7 @@ if [[ $(echo "$outputs" | grep -w "dnxhd") ]] ; then
     fi
     output_options_dnxhd_name="dnxhd.mov"
     outputarguments+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
+    _mkdir "$output_options_dnxhd_dir"
 fi
 
 # lossless output options
@@ -112,6 +125,7 @@ if [[ $(echo "$outputs" | grep -w "losslessh264") ]] ; then
     fi
     output_options_lossless_name="${baselosslessoutputfilename}.mov"
     outputarguments+=("${output_options_lossless_dir}/${output_options_lossless_name}")
+    _mkdir "$output_options_lossless_dir"
 fi
 
 unset audioinput
@@ -134,18 +148,8 @@ echo Selected frame rate is "$input_frame_rate"
 input_options="-start_number $start_number -r $input_frame_rate"
 
 # check for required directories (possibly create missing output directories)
-if [ ! -d "$logspath" ] ; then
-    mkdir -p "$logspath"
-    if [[ "${?}" != 0 ]] ; then
-        echo "Error: Can not create $logspath"
-        exit 1
-    fi
-fi
-if [ ! "$NODNXHD" = "Y" ] ; then
-    [ -d "$output_options_dnxhd_dir" ] || { mkdir -p "$output_options_dnxhd_dir" || { echo "Error: Can not create $output_options_dnxhd_dir" ; exit 1 ; }; };
-fi
-[ -d "$output_options_lossless_dir" ] || { mkdir -p "$output_options_lossless_dir" || { echo "Error: Can not create $output_options_lossless_dir" ; exit 1 ; }; };
- 
+_mkdir "$logspath"
+
 # check for minimal required files
 [ -r "$firstimagefile" ] || { echo "Error: $firstimagefile is not found or not readable" ; exit 1 ; };
  
