@@ -49,6 +49,14 @@ _checkwritable(){
     fi
 }
 
+_checkreadable(){
+    thing2check="${1}"
+    if [ ! -r "${thing2check}" ] ; then
+        echo "Error: ${thing2check} is not readable"
+        exit 1
+    fi
+}
+
 _mkdir(){
     # _mkdir is a local function that makes directories if needed and exits if they can't be made
     dir2make="${1}"
@@ -167,10 +175,7 @@ _mkdir "${logspath}"
 export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
 
 # check for minimal required files
-if [ ! -r "${firstimagefile}" ] ; then
-    echo "Error: ${firstimagefile} is not found or not readable"
-    exit 1
-fi
+_checkreadable "${firstimagefile}"
 
 ffmpeg -v warning -stats ${overwrite_outputs} ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
 echo
