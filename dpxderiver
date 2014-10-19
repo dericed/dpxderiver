@@ -34,39 +34,51 @@ output_options_dnxhd_dir=""
 OPTIND=1
 
 _checkdir(){
-    dir2check="${1}"
-    if [ ! -d "${dir2check}" ] ; then
-        echo "Error: ${dir2check} is not found"
-        exit 1
-    fi
+    while [ "${*}" != "" ] ; do
+        dir2check="${1}"
+        if [ ! -d "${dir2check}" ] ; then
+            echo "Error: ${dir2check} is not found"
+            exit 1
+        fi
+        shift
+    done
 }
 
 _checkwritable(){
-    thing2check="${1}"
-    if [ ! -w "${thing2check}" ] ; then
-        echo "Error: ${thing2check} is not writable"
-        exit 1
-    fi
+    while [ "${*}" != "" ] ; do
+        thing2check="${1}"
+        if [ ! -w "${thing2check}" ] ; then
+            echo "Error: ${thing2check} is not writable"
+            exit 1
+        fi
+        shift
+    done
 }
 
 _checkreadable(){
-    thing2check="${1}"
-    if [ ! -r "${thing2check}" ] ; then
-        echo "Error: ${thing2check} is not readable"
-        exit 1
-    fi
+    while [ "${*}" != "" ] ; do
+        thing2check="${1}"
+        if [ ! -r "${thing2check}" ] ; then
+            echo "Error: ${thing2check} is not readable"
+            exit 1
+        fi
+        shift
+    done
 }
 
 _mkdir(){
     # _mkdir is a local function that makes directories if needed and exits if they can't be made
-    dir2make="${1}"
-    if [ ! -d "${dir2make}" ] ; then
-        mkdir -p "${dir2make}"
-        if [[ "${?}" != 0 ]] ; then
-            echo "Error: Can not create ${dir2make}"
-            exit 1
+    while [ "${*}" != "" ] ; do
+        dir2make="${1}"
+        if [ ! -d "${dir2make}" ] ; then
+            mkdir -p "${dir2make}"
+            if [[ "${?}" != 0 ]] ; then
+                echo "Error: Can not create ${dir2make}"
+                exit 1
+            fi
         fi
-    fi
+        shift
+    done
 }
 
 while getopts ":d:o:h" opt; do
@@ -94,9 +106,7 @@ while [ "${*}" != "" ] ; do
     baselosslessoutputfilename=$(basename "${1}")
     imagepath="${dpx_package_path}/images"
     audiopath="${dpx_package_path}/audio"
-    _checkdir "${dpx_package_path}"
-    _checkdir "${imagepath}"
-    _checkdir "${audiopath}"
+    _checkdir "${dpx_package_path}" "${imagepath}" "${audiopath}"
 
     # presumed variables
     logspath="${dpx_package_path}/logs"
