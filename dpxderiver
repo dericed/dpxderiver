@@ -42,9 +42,9 @@ _checkdir(){
 }
 
 _checkwritable(){
-    dir2check="${1}"
-    if [ ! -w "${dir2check}" ] ; then
-        echo "Error: ${dir2check} is not writable"
+    thing2check="${1}"
+    if [ ! -w "${thing2check}" ] ; then
+        echo "Error: ${thing2check} is not writable"
         exit 1
     fi
 }
@@ -106,40 +106,40 @@ fi
 audiofile=$(find "${audiopath}" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
 overwrite_outputs=" -y " # must equal " -y " to overwrite outputs, " -n " to skip any operation that would overwrite, or " " to prompt to user to decide
 
-unset outputarguments
+unset output_options
 unset input_options
 
 #dnxhd output options
 if [[ $(echo "${outputs}" | grep -w "dnxhd") ]] ; then
-    outputarguments+=(-c:v dnxhd)
-    outputarguments+=(-pix_fmt yuv422p10le)
-    outputarguments+=(-s 1920x1080)
-    outputarguments+=(-b:v 175M)
-    outputarguments+=(-r ntsc-film)
+    output_options+=(-c:v dnxhd)
+    output_options+=(-pix_fmt yuv422p10le)
+    output_options+=(-s 1920x1080)
+    output_options+=(-b:v 175M)
+    output_options+=(-r ntsc-film)
     if [ -f "$audiofile" ] ; then
-        outputarguments+=(-c:a copy)
+        output_options+=(-c:a copy)
     fi
     if [ ! "${output_options_dnxhd_dir}" ] ; then
         output_options_dnxhd_dir="${dpx_package_path}/dnxhd"
     fi
     output_options_dnxhd_name="dnxhd.mov"
-    outputarguments+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
+    output_options+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
     _mkdir "$output_options_dnxhd_dir"
 fi
 
 # lossless output options
 if [[ $(echo "${outputs}" | grep -w "losslessh264") ]] ; then
-    outputarguments+=(-c:v libx264)
-    outputarguments+=(-pix_fmt yuv422p10le)
-    outputarguments+=(-qp 0) # force constant QT, 0=lossless
+    output_options+=(-c:v libx264)
+    output_options+=(-pix_fmt yuv422p10le)
+    output_options+=(-qp 0) # force constant QT, 0=lossless
     if [ -f "${audiofile}" ] ; then
-        outputarguments+=(-c:a copy)
+        output_options+=(-c:a copy)
     fi
     if [ ! "${output_options_lossless_dir}" ] ; then
         output_options_lossless_dir="${dpx_package_path}/lossless"
     fi
     output_options_lossless_name="${baselosslessoutputfilename}.mov"
-    outputarguments+=("${output_options_lossless_dir}/${output_options_lossless_name}")
+    output_options+=("${output_options_lossless_dir}/${output_options_lossless_name}")
     _mkdir "${output_options_lossless_dir}"
 fi
 
@@ -172,6 +172,6 @@ if [ ! -r "${firstimagefile}" ] ; then
     exit 1
 fi
 
-ffmpeg -v warning -stats ${overwrite_outputs} ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${outputarguments[@]}
+ffmpeg -v warning -stats ${overwrite_outputs} ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
 echo
 echo DONE
