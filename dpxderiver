@@ -11,9 +11,9 @@ version=0.2
 
 usage(){
     echo
-    echo "$(basename $0)"
+    echo "$(basename ${0})"
     echo "Transcode DPX file sets to pre-determined outputs."
-    echo "Usage: $(basename $0) [ -d /output/directory/ ] package"
+    echo "Usage: $(basename ${0}) [ -d /output/directory/ ] package"
     echo " -d <directory>   - Set directory for the output files."
     echo " -o <outputs>     - List the output formats desired, separate multiple with '+'."
     echo " -h               - Display this help"
@@ -33,6 +33,22 @@ output_options_dnxhd_dir=""
 # command-line options to set mediaid and original variables
 OPTIND=1
 
+_checkdir(){
+    dir2check="${1}"
+    if [ ! -d "${dir2check}" ] ; then
+        echo "Error: ${dir2check} is not found"
+        exit 1
+    fi
+}
+
+_checkwritable(){
+    dir2check="${1}"
+    if [ ! -w "${dir2check}" ] ; then
+        echo "Error: ${dir2check} is not writable"
+        exit 1
+    fi
+}
+
 _mkdir(){
     # _mkdir is a local function that makes directories if needed and exits if they can't be made
     dir2make="${1}"
@@ -46,59 +62,54 @@ _mkdir(){
 }
 
 while getopts ":d:o:h" opt; do
-case "$opt" in
-        d)  if [ ! -d "$OPTARG" ] ; then
-                echo "Error: $OPTARG is not a directory"
-                exit 1
-            elif  [ ! -w "$OPTARG" ] ; then
-                echo "Error: $OPTARG is not writable"
-                exit 1
-            else
-                output_options_lossless_dir="$OPTARG"
-                output_options_dnxhd_dir="$OPTARG"
-            fi ;;
+case "${opt}" in
+        d)  _checkdir "${OPTARG}"
+            _checkwritable "${OPTARG}"
+            output_options_lossless_dir="${OPTARG}"
+            output_options_dnxhd_dir="${OPTARG}"
+            ;;
         o)  outputs="${OPTARG/+/ }" ;;
         h) usage ;;
-        *) echo "bad option -$OPTARG" ; usage ;;
-        :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
+        *) echo "bad option -${OPTARG}" ; usage ;;
+        :) echo "Option -${OPTARG} requires an argument" ; exit 1 ;;
     esac
 done
 shift $(( ${OPTIND} - 1 ))
 
-[ "$#" != 1 ] && usage
-dpx_package_path="$1"
+[ "${#}" != 1 ] && usage
+dpx_package_path="${1}"
 
-baselosslessoutputfilename=`basename $1`
-imagepath="$dpx_package_path/images"
-audiopath="$dpx_package_path/audio"
-[ -d "$dpx_package_path" ] || { echo "Error: $dpx_package_path is not found or is not a directory" ; usage ; };
-[ -d "$imagepath" ] || { echo "Error: $imagepath is not found" ; exit 1 ; };
-[ -d "$audiopath" ] || { echo "Error: $audiopath is not found" ; exit 1 ; };
+baselosslessoutputfilename=$(basename "${1}")
+imagepath="${dpx_package_path}/images"
+audiopath="${dpx_package_path}/audio"
+_checkdir "${dpx_package_path}"
+_checkdir "${imagepath}"
+_checkdir "${audiopath}"
 
 # presumed variables
-logspath="$dpx_package_path/logs"
+logspath="${dpx_package_path}/logs"
 start_number="100000"
-firstimagefile=$(find "$imagepath" -type f -iname "*${start_number}.dpx" | head -n 1)
-if  [ ! $firstimagefile ] ; then
-    firstimagefile=$(find "$imagepath" -type f -iname "*dpx"| sort | head -n 1)
-    start_number=$(basename "$firstimagefile" | grep -o '[0-9]\{6\}')
+firstimagefile=$(find "${imagepath}" -type f -iname "*${start_number}.dpx" | head -n 1)
+if  [ ! ${firstimagefile} ] ; then
+    firstimagefile=$(find "${imagepath}" -type f -iname "*dpx"| sort | head -n 1)
+    start_number=$(basename "${firstimagefile}" | grep -o '[0-9]\{6\}')
 fi
-if  [ ! $firstimagefile ] ; then
+if  [ ! ${firstimagefile} ] ; then
     echo The image file name and pattern can not be deduced.
     exit 1
 fi
-patternfilename=$(echo "$firstimagefile" | sed "s/${start_number}/%06d/")
-if [ -z "$start_number" ] ; then
+patternfilename=$(echo "${firstimagefile}" | sed "s/${start_number}/%06d/")
+if [ -z "${start_number}" ] ; then
     echo ERROR Unable to discover number pattern of the filenames
     exit 1
 fi
-audiofile=$(find "$audiopath" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
+audiofile=$(find "${audiopath}" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
 overwrite_outputs=" -y " # must equal " -y " to overwrite outputs, " -n " to skip any operation that would overwrite, or " " to prompt to user to decide
 
 unset outputarguments
 
 #dnxhd output options
-if [[ $(echo "$outputs" | grep -w "dnxhd") ]] ; then
+if [[ $(echo "${outputs}" | grep -w "dnxhd") ]] ; then
     outputarguments+=(-c:v dnxhd)
     outputarguments+=(-pix_fmt yuv422p10le)
     outputarguments+=(-s 1920x1080)
@@ -107,8 +118,8 @@ if [[ $(echo "$outputs" | grep -w "dnxhd") ]] ; then
     if [ -f "$audiofile" ] ; then
         outputarguments+=(-c:a copy)
     fi
-    if [ ! "$output_options_dnxhd_dir" ] ; then
-        output_options_dnxhd_dir="$dpx_package_path/dnxhd"
+    if [ ! "${output_options_dnxhd_dir}" ] ; then
+        output_options_dnxhd_dir="${dpx_package_path}/dnxhd"
     fi
     output_options_dnxhd_name="dnxhd.mov"
     outputarguments+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
@@ -116,27 +127,27 @@ if [[ $(echo "$outputs" | grep -w "dnxhd") ]] ; then
 fi
 
 # lossless output options
-if [[ $(echo "$outputs" | grep -w "losslessh264") ]] ; then
+if [[ $(echo "${outputs}" | grep -w "losslessh264") ]] ; then
     outputarguments+=(-c:v libx264)
     outputarguments+=(-pix_fmt yuv422p10le)
     outputarguments+=(-qp 0) # force constant QT, 0=lossless
-    if [ -f "$audiofile" ] ; then
+    if [ -f "${audiofile}" ] ; then
         outputarguments+=(-c:a copy)
     fi
-    if [ ! "$output_options_lossless_dir" ] ; then
-        output_options_lossless_dir="$dpx_package_path/lossless"
+    if [ ! "${output_options_lossless_dir}" ] ; then
+        output_options_lossless_dir="${dpx_package_path}/lossless"
     fi
     output_options_lossless_name="${baselosslessoutputfilename}.mov"
     outputarguments+=("${output_options_lossless_dir}/${output_options_lossless_name}")
-    _mkdir "$output_options_lossless_dir"
+    _mkdir "${output_options_lossless_dir}"
 fi
 
 unset audioinput
-if [ -f "$audiofile" ] ; then
-    audioinput=(-i $audiofile)
+if [ -f "${audiofile}" ] ; then
+    audioinput=(-i ${audiofile})
 fi
 
-if [ "$input_frame_rate" = "" ] ; then
+if [ "${input_frame_rate}" = "" ] ; then
 echo "What frame rate should be used to interpret the input? "
     PS3="Selection? "
     select input_frame_rate in "12" "16" "18" "20" "22" "24000/1001" "24" "25" "30"
@@ -144,14 +155,14 @@ echo "What frame rate should be used to interpret the input? "
         break
     done
 fi
-echo Selected frame rate is "$input_frame_rate"
+echo "Selected frame rate is ${input_frame_rate}"
 
 # variable for dpx input
-input_options="-start_number $start_number -r $input_frame_rate"
+input_options="-start_number ${start_number} -r ${input_frame_rate}"
 
 # check for required directories (possibly create missing output directories)
-_mkdir "$logspath"
-export FFREPORT="file=$logspath/%p_%t_$(basename "${0}")_${version}.log"
+_mkdir "${logspath}"
+export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
 
 # check for minimal required files
 if [ ! -r "${firstimagefile}" ] ; then
@@ -159,6 +170,6 @@ if [ ! -r "${firstimagefile}" ] ; then
     exit 1
 fi
 
-ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${outputarguments[@]}
+ffmpeg -v warning -stats ${overwrite_outputs} ${input_options} -i "${patternfilename}" ${audioinput[@]} ${outputarguments[@]}
 echo
 echo DONE
