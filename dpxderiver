@@ -11,11 +11,19 @@ version=0.2
 
 usage(){
     echo
-    echo "$(basename $0) 2.11-SNAPSHOT"
+    echo "$(basename $0)"
     echo "Transcode DPX file sets to pre-determined outputs."
     echo "Usage: $(basename $0) [ -d /output/directory/ ] package"
     echo " -d <directory>   - Set directory for the output files."
+    echo " -o <outputs>     - List the output formats desired, separate multiple with '+'."
     echo " -h               - Display this help"
+    echo
+    echo "Examples:"
+    echo "  dpxderiver -o dnxhd+losslessh264 /a/folder/of/dpx/images"
+    echo "  will make both an dnxhd and a lossless h264 output"
+    echo
+    echo "  dpxderiver -o losslessh264 -d /output/folder /a/folder/of/dpx/images"
+    echo "  will only output a lossless h264 file into the /output/folder directory."
     exit
 }
 
@@ -25,7 +33,7 @@ output_options_dnxhd_dir=""
 # command-line options to set mediaid and original variables
 OPTIND=1
 
-while getopts ":d:h" opt; do
+while getopts ":d:o:h" opt; do
 case "$opt" in
         d)  if [ ! -d "$OPTARG" ] ; then
                 echo "Error: $OPTARG is not a directory"
@@ -37,7 +45,7 @@ case "$opt" in
                 output_options_lossless_dir="$OPTARG"
                 output_options_dnxhd_dir="$OPTARG"
             fi ;;
-        
+        o)  outputs="${OPTARG/+/ }" ;;
         h) usage ;;
         *) echo "bad option -$OPTARG" ; usage ;;
         :) echo "Option -$OPTARG requires an argument" ; exit 1 ;;
@@ -72,16 +80,43 @@ patternfilename=$(echo "$firstimagefile" | sed "s/${start_number}/%06d/")
 audiofile=$(find "$audiopath" -type f -iname '*.wav' | head -n 1)  # need to offset audio to match dpx from 10000
 overwrite_outputs=" -y " # must equal " -y " to overwrite outputs, " -n " to skip any operation that would overwrite, or " " to prompt to user to decide
 
-unset audioinput
-unset output_options_dnxhd_v
-unset output_options_dnxhd_a
-unset output_options_lossless_v
-unset output_options_lossless_a
+unset outputarguments
 
+#dnxhd output options
+if [[ $(echo "$outputs" | grep -w "dnxhd") ]] ; then
+    outputarguments+=(-c:v dnxhd)
+    outputarguments+=(-pix_fmt yuv422p10le)
+    outputarguments+=(-s 1920x1080)
+    outputarguments+=(-b:v 175M)
+    outputarguments+=(-r ntsc-film)
+    if [ -f "$audiofile" ] ; then
+        outputarguments+=(-c:a copy)
+    fi
+    if [ ! "$output_options_dnxhd_dir" ] ; then
+        output_options_dnxhd_dir="$dpx_package_path/dnxhd"
+    fi
+    output_options_dnxhd_name="dnxhd.mov"
+    outputarguments+=("${output_options_dnxhd_dir}/${output_options_dnxhd_name}")
+fi
+
+# lossless output options
+if [[ $(echo "$outputs" | grep -w "losslessh264") ]] ; then
+    outputarguments+=(-c:v libx264)
+    outputarguments+=(-pix_fmt yuv422p10le)
+    outputarguments+=(-qp 0) # force constant QT, 0=lossless
+    if [ -f "$audiofile" ] ; then
+        outputarguments+=(-c:a copy)
+    fi
+    if [ ! "$output_options_lossless_dir" ] ; then
+        output_options_lossless_dir="$dpx_package_path/lossless"
+    fi
+    output_options_lossless_name="${baselosslessoutputfilename}.mov"
+    outputarguments+=("${output_options_lossless_dir}/${output_options_lossless_name}")
+fi
+
+unset audioinput
 if [ -f "$audiofile" ] ; then
-audioinput=(-i $audiofile)
-output_options_dnxhd_a=(-c:a copy)
-output_options_lossless_a=(-c:a copy)
+    audioinput=(-i $audiofile)
 fi
 
 if [ "$input_frame_rate" = "" ] ; then
@@ -98,28 +133,6 @@ echo Selected frame rate is "$input_frame_rate"
 # variable for dpx input
 input_options="-start_number $start_number -r $input_frame_rate"
 
-# dnxhd output options
-if [ ! "$output_options_dnxhd_dir" ] ; then
-    echo hi
-    output_options_dnxhd_dir="$dpx_package_path/dnxhd"
-fi
-output_options_dnxhd_name="dnxhd.mov"
-output_options_dnxhd_v+=(-c:v dnxhd)
-output_options_dnxhd_v+=(-pix_fmt yuv422p10le)
-output_options_dnxhd_v+=(-s 1920x1080)
-output_options_dnxhd_v+=(-b:v 175M)
-output_options_dnxhd_v+=(-r ntsc-film)
-
-# lossless output options
-if [ ! "$output_options_lossless_dir" ] ; then
-    output_options_lossless_dir="$dpx_package_path/lossless"
-fi
-#output_options_lossless_name="lossless.mov"
-output_options_lossless_name="${baselosslessoutputfilename}.mov"
-output_options_lossless_v=(-c:v libx264)
-output_options_lossless_v+=(-pix_fmt yuv422p10le)
-output_options_lossless_v+=(-qp 0) # force constant QT, 0=lossless
- 
 # check for required directories (possibly create missing output directories)
 [ -d "$logspath" ] || { mkdir -p "$logspath" || { echo "Error: Can not create $logspath" ; exit 1 ; }; };
 if [ ! "$NODNXHD" = "Y" ] ; then
@@ -132,10 +145,6 @@ fi
  
 export FFREPORT="file=$logspath/%p_%t_$(basename "${0}")_${version}.log"
 
-if [ ! "$NODNXHD" = "Y" ] ; then
-    ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_dnxhd_v[@]} ${output_options_dnxhd_a[@]} "$output_options_dnxhd_dir/$output_options_dnxhd_name" ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
-else
-    ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${output_options_lossless_v[@]} ${output_options_lossless_a[@]} "$output_options_lossless_dir/$output_options_lossless_name"
-fi
+ffmpeg -v warning -stats $overwrite_outputs ${input_options} -i "$patternfilename" ${audioinput[@]} ${outputarguments[@]}
 echo
 echo DONE
