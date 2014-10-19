@@ -107,6 +107,7 @@ audiofile=$(find "${audiopath}" -type f -iname '*.wav' | head -n 1)  # need to o
 overwrite_outputs=" -y " # must equal " -y " to overwrite outputs, " -n " to skip any operation that would overwrite, or " " to prompt to user to decide
 
 unset outputarguments
+unset input_options
 
 #dnxhd output options
 if [[ $(echo "${outputs}" | grep -w "dnxhd") ]] ; then
@@ -158,7 +159,8 @@ fi
 echo "Selected frame rate is ${input_frame_rate}"
 
 # variable for dpx input
-input_options="-start_number ${start_number} -r ${input_frame_rate}"
+input_options+=(-start_number ${start_number})
+input_options+=(-r ${input_frame_rate})
 
 # check for required directories (possibly create missing output directories)
 _mkdir "${logspath}"
@@ -170,6 +172,6 @@ if [ ! -r "${firstimagefile}" ] ; then
     exit 1
 fi
 
-ffmpeg -v warning -stats ${overwrite_outputs} ${input_options} -i "${patternfilename}" ${audioinput[@]} ${outputarguments[@]}
+ffmpeg -v warning -stats ${overwrite_outputs} ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${outputarguments[@]}
 echo
 echo DONE
