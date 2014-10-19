@@ -13,7 +13,7 @@ usage(){
     echo
     echo "$(basename ${0})"
     echo "Transcode DPX file sets to pre-determined outputs."
-    echo "Usage: $(basename ${0}) [ -d /output/directory/ ] package"
+    echo "Usage: $(basename ${0}) [ -d /output/directory/ ] package [ package2 package3 ... ]"
     echo " -d <directory>   - Set directory for the output files."
     echo " -o <outputs>     - List the output formats desired, separate multiple with '+'."
     echo " -h               - Display this help"
@@ -84,9 +84,11 @@ case "${opt}" in
 done
 shift $(( ${OPTIND} - 1 ))
 
-if [ "${#}" != 1 ] ; then
+if [ "${#}" = 0 ] ; then
     usage
 fi
+
+while [ "${*}" != "" ] ; do
 dpx_package_path="${1}"
 
 baselosslessoutputfilename=$(basename "${1}")
@@ -185,5 +187,7 @@ export FFREPORT="file=${logspath}/%p_%t_$(basename "${0}")_${version}.log"
 _checkreadable "${firstimagefile}"
 
 ffmpeg ${input_options[@]} -i "${patternfilename}" ${audioinput[@]} ${output_options[@]}
+shift
+done
 echo
 echo DONE
