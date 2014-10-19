@@ -13,7 +13,7 @@ usage(){
     echo "$(basename $0) 2.11-SNAPSHOT"
     echo "Transcode DPX file sets to pre-determined outputs."
     echo "Usage: $(basename $0) [ -o /output/directory/ ] package"
-    echo " -o <directory>   - Set directory for the output files."
+    echo " -d <directory>   - Set directory for the output files."
     echo " -h               - Display this help"
     exit
 }
@@ -24,9 +24,9 @@ output_options_dnxhd_dir=""
 # command-line options to set mediaid and original variables
 OPTIND=1
 
-while getopts ":o:h" opt; do
+while getopts ":d:h" opt; do
 case "$opt" in
-        o)  if [ ! -d "$OPTARG" ] ; then
+        d)  if [ ! -d "$OPTARG" ] ; then
                 echo "Error: $OPTARG is not a directory"
                 exit 1
             elif  [ ! -w "$OPTARG" ] ; then
