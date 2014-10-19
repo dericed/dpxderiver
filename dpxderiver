@@ -78,12 +78,9 @@ unset output_options_lossless_v
 unset output_options_lossless_a
 
 if [ -f "$audiofile" ] ; then
-hasaudio='y'
 audioinput=(-i $audiofile)
 output_options_dnxhd_a=(-c:a copy)
 output_options_lossless_a=(-c:a copy)
-else
-hasaudio='n'
 fi
 
 if [ "$input_frame_rate" = "" ] ; then
