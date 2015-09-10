@@ -45,7 +45,7 @@ _checkdir(){
     while [ "${*}" != "" ] ; do
         dir2check="${1}"
         if [ ! -d "${dir2check}" ] ; then
-            echo "Error: ${dir2check} is not found"
+            echo "Error: ${dir2check} is not found or not a directory"
             exit 1
         fi
         shift
