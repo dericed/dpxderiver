@@ -9,6 +9,12 @@ version=0.2
 # ffmpeg -f lavfi -i testsrc=s=1920x1080:d=10:r=ntsc-film -start_number 100000 dpx_package_path/images/%06d.dpx
 # ffmpeg -f lavfi -i aevalsrc="sin(440*2*PI*t):cos(430*2*PI*t)::c=stereo:s=48000:d=10" -c pcm_s24le dpx_package_path/audio/1.wav
 
+scriptname=$(basename "${0}")
+imagesubdirectory="images"
+audiosubdirectory="audio"
+output_options_lossless_dir=""
+output_options_dnxhd_dir=""
+
 usage(){
     echo
     echo "$(basename ${0})"
@@ -18,6 +24,11 @@ usage(){
     echo " -o <outputs>     - List the output formats desired, separate multiple with '+'."
     echo " -h               - Display this help"
     echo
+    echo "Note:"
+    echo "In the context of ${scriptname} a 'package' is consider a directory that contains a ${imagesubdirectory} subdirectory and optionally a ${audiosubdirectory}."
+    echo
+    echo "Outputs:"
+    echo "The supported output options are hardcoded into ${scriptname}. The currently supported outputs are: losslessh264 and dnxhd."
     echo "Examples:"
     echo "  dpxderiver -o dnxhd+losslessh264 /a/folder/of/dpx/images"
     echo "  will make both an dnxhd and a lossless h264 output"
@@ -26,9 +37,6 @@ usage(){
     echo "  will only output a lossless h264 file into the /output/folder directory."
     exit
 }
-
-output_options_lossless_dir=""
-output_options_dnxhd_dir=""
 
 # command-line options to set mediaid and original variables
 OPTIND=1
@@ -104,8 +112,8 @@ while [ "${*}" != "" ] ; do
     dpx_package_path="${1}"
 
     baselosslessoutputfilename=$(basename "${1}")
-    imagepath="${dpx_package_path}/images"
-    audiopath="${dpx_package_path}/audio"
+    imagepath="${dpx_package_path}/${imagesubdirectory}"
+    audiopath="${dpx_package_path}/${audiosubdirectory}"
     _checkdir "${dpx_package_path}" "${imagepath}" "${audiopath}"
 
     # presumed variables
