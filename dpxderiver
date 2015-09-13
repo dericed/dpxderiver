@@ -141,7 +141,9 @@ while [ "${*}" != "" ] ; do
     unset output_options
     unset input_options
 
-    input_frame_rate=$(echo $(basename "${dpx_package_path}") | cut -d_ -f1)
+    if [[ ! "${input_frame_rate}" ]] ; then
+        input_frame_rate=$(echo $(basename "${dpx_package_path}") | cut -d_ -f1)
+    fi
 
     while [[ ! "${input_frame_rate}" =~ ^[0-9]+(\.[0-9]+)?$|^[0-9]+(/[0-9]+)?$|Custom ]] ; do
     echo "What frame rate should be used to interpret the input? "
