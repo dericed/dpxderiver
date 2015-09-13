@@ -201,6 +201,15 @@ while [ "${*}" != "" ] ; do
     unset audioinput
     if [ -f "${audiofile}" ] ; then
         audioinput=(-i "${audiofile}")
+        duration_audio=$(ffmpeg -i "${audiofile}" 2>&1 | grep "Duration: " | cut -d":" -f 2- | cut -d"," -f1 | sed 's| ||g')
+        echo ffmpeg ${input_options[@]} -i "${patternfilename}"
+        duration_dpx=$(ffmpeg -framerate "${input_frame_rate}" -i "${patternfilename}" 2>&1 | grep "Duration: " | cut -d":" -f 2- | cut -d"," -f1 | sed 's| ||g')
+        if [[ "${duration_audio}" !=  "${duration_dpx}" ]] ; then
+            echo "*** WARNING ***"
+            echo "The audio duration is ${duration_audio}"
+            echo "The dpx duration (at ${input_frame_rate} fps) is ${duration_dpx}"
+            echo "The resulting file may have sync issues."
+        fi
     fi
 
     # set up logging directory and environment variables
