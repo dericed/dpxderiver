@@ -159,7 +159,6 @@ while [ "${*}" != "" ] ; do
     input_options+=(-v warning)
     input_options+=(-stats)
     input_options+=(-start_number ${start_number})
-    input_options+=(-framerate ${input_frame_rate})
     if [ "${overwrite_outputs}" ] ; then
         input_options+=(-"${overwrite_outputs}")
     fi
@@ -180,6 +179,7 @@ while [ "${*}" != "" ] ; do
 
     #dnxhd output options
     if [[ $(echo "${outputs}" | grep -w "dnxhd") ]] ; then
+        output_options+=(-vf "setpts=N/((${input_frame_rate})*TB)")
         output_options+=(-c:v dnxhd)
         output_options+=(-pix_fmt yuv422p10le)
         output_options+=(-s 1920x1080)
@@ -198,6 +198,7 @@ while [ "${*}" != "" ] ; do
 
     # lossless output options
     if [[ $(echo "${outputs}" | grep -w "losslessh264") ]] ; then
+        output_options+=(-vf "setpts=N/((${input_frame_rate})*TB)")
         output_options+=(-c:v libx264)
         output_options+=(-pix_fmt yuv422p10le)
         output_options+=(-qp 0) # force constant QT, 0=lossless
