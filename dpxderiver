@@ -22,6 +22,7 @@ usage(){
     echo "Usage: $(basename ${0}) [ -d /output/directory/ ] package [ package2 package3 ... ]"
     echo " -d <directory>   - Set directory for the output files."
     echo " -o <outputs>     - List the output formats desired, separate multiple with '+'."
+    echo " -r <framerate>   - Specify the frame rate to be used to interpret the input set of frames. If this value is not set the script will request it."
     echo " -h               - Display this help"
     echo
     echo "Note:"
@@ -89,7 +90,7 @@ _mkdir(){
     done
 }
 
-while getopts ":d:o:h" opt; do
+while getopts ":d:o:r:h" opt; do
 case "${opt}" in
         d)  _checkdir "${OPTARG}"
             _checkwritable "${OPTARG}"
@@ -97,6 +98,7 @@ case "${opt}" in
             output_options_dnxhd_dir="${OPTARG}"
             ;;
         o)  outputs="${OPTARG/+/ }" ;;
+        r)  input_frame_rate="${OPTARG}" ;;
         h)  usage ;;
         *)  echo "bad option -${OPTARG}" ; usage ;;
         :)  echo "Option -${OPTARG} requires an argument" ; exit 1 ;;
