@@ -178,14 +178,18 @@ while [ "${*}" != "" ] ; do
         audioinput=(-i "${audiofile}")
     fi
 
-    if [ "${input_frame_rate}" = "" ] ; then
+    while [[ ! "${input_frame_rate}" =~ ^[0-9]+(\.[0-9]+)?$|^[0-9]+(/[0-9]+)?$|Custom ]] ; do
     echo "What frame rate should be used to interpret the input? "
         PS3="Selection? "
-        select input_frame_rate in "12" "16" "18" "20" "22" "24000/1001" "24" "25" "30"
+        select input_frame_rate in "12" "16" "18" "20" "22" "24000/1001" "24" "25" "30" "Custom"
         do
             break
         done
-    fi
+        if [[ "${input_frame_rate}" == "Custom" ]] ; then
+            echo -n "Enter a custom frame rate as a decimal or ratio: "
+            read input_frame_rate
+        fi
+    done
     echo "Selected frame rate is ${input_frame_rate}"
 
     # set input_options for transcoding
