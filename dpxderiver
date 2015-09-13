@@ -22,7 +22,7 @@ usage(){
     echo "Usage: $(basename ${0}) [ -d /output/directory/ ] package [ package2 package3 ... ]"
     echo " -d <directory>   - Set directory for the output files."
     echo " -o <outputs>     - List the output formats desired, separate multiple with '+'."
-    echo " -r <framerate>   - Specify the frame rate to be used to interpret the input set of frames. If this value is not set the script will request it."
+    echo " -r <framerate>   - Specify the frame rate to be used to interpret the input set of frames. The framerate can also be interpreted by reading a valid framerate as a prefix to the input package (example: 24_FILMTITLE). If this value is not set as an argument or package prefix then the script will request it."
     echo " -h               - Display this help"
     echo
     echo "Note:"
@@ -140,6 +140,8 @@ while [ "${*}" != "" ] ; do
 
     unset output_options
     unset input_options
+
+    input_frame_rate=$(echo $(basename "${dpx_package_path}") | cut -d_ -f1)
 
     while [[ ! "${input_frame_rate}" =~ ^[0-9]+(\.[0-9]+)?$|^[0-9]+(/[0-9]+)?$|Custom ]] ; do
     echo "What frame rate should be used to interpret the input? "
