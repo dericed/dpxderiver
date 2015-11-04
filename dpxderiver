@@ -149,8 +149,9 @@ while [ "${*}" != "" ] ; do
         input_frame_rate=$(echo $(basename "${dpx_package_path}") | cut -d_ -f1)
     fi
 
-    while [ ! "${input_frame_rate}" =~ '^[0-9]+(\.[0-9]+)?$|^[0-9]+(/[0-9]+)?$|Custom' ] ; do
-    echo "What frame rate should be used to interpret the input? "
+    regex="^[0-9]+(\.[0-9]+)?$|^[0-9]+(/[0-9]+)?$|Custom"
+    while [[ ! $input_frame_rate =~ $regex ]] ; do
+        echo "What frame rate should be used to interpret the input? "
         PS3="Selection? "
         select input_frame_rate in "12" "16" "18" "20" "22" "24000/1001" "24" "25" "30" "Custom"
         do
