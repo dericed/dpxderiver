@@ -167,6 +167,7 @@ while [ "${*}" != "" ] ; do
     # set input_options for transcoding
     input_options+=(-v warning)
     input_options+=(-stats)
+    input_options+=(-framerate ${input_frame_rate})
     input_options+=(-start_number ${start_number})
     if [ "${overwrite_outputs}" ] ; then
         input_options+=(-"${overwrite_outputs}")
